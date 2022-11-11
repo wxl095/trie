@@ -2,7 +2,8 @@
 //
 // A Trie has a root Node which is the base of the tree.
 // Each subsequent Node has a letter and children, which are
-// nodes that have letter values associated with them.
+// nodes that h	ave letter values associated with them.
+
 package trie
 
 import (
@@ -36,7 +37,7 @@ func (a ByKeys) Less(i, j int) bool { return len(a[i]) < len(a[j]) }
 
 const nul = 0x0
 
-// Creates a new Trie with an initialized root Node.
+// New Creates a new Trie with an initialized root Node.
 func New() *Trie {
 	return &Trie{
 		root: &Node{children: make(map[rune]*Node), depth: 0},
@@ -44,12 +45,12 @@ func New() *Trie {
 	}
 }
 
-// Returns the root node for the Trie.
+// Root Returns the root node for the Trie.
 func (t *Trie) Root() *Node {
 	return t.root
 }
 
-// Adds the key to the Trie, including meta data. Meta data
+// Add  the key to the Trie, including metadata. Metadata
 // is stored as `interface{}` and must be type cast by
 // the caller.
 func (t *Trie) Add(key string, meta interface{}) *Node {
@@ -57,13 +58,13 @@ func (t *Trie) Add(key string, meta interface{}) *Node {
 
 	t.size++
 	runes := []rune(key)
-	bitmask := maskruneslice(runes)
+	bitmask := maskRuneSlice(runes)
 	node := t.root
 	node.mask |= bitmask
 	node.termCount++
 	for i := range runes {
 		r := runes[i]
-		bitmask = maskruneslice(runes[i:])
+		bitmask = maskRuneSlice(runes[i:])
 		if n, ok := node.children[r]; ok {
 			node = n
 			node.mask |= bitmask
@@ -78,7 +79,7 @@ func (t *Trie) Add(key string, meta interface{}) *Node {
 	return node
 }
 
-// Finds and returns meta data associated
+// Find  and returns metadata associated
 // with `key`.
 func (t *Trie) Find(key string) (*Node, bool) {
 	node := findNode(t.Root(), []rune(key))
@@ -99,7 +100,7 @@ func (t *Trie) HasKeysWithPrefix(key string) bool {
 	return node != nil
 }
 
-// Removes a key from the trie, ensuring that
+// Remove  a key from the trie, ensuring that
 // all bitmasks up to root are appropriately recalculated.
 func (t *Trie) Remove(key string) {
 	var (
@@ -121,7 +122,7 @@ func (t *Trie) Remove(key string) {
 	t.mu.Unlock()
 }
 
-// Returns all the keys currently stored in the trie.
+// Keys Returns all the keys currently stored in the trie.
 func (t *Trie) Keys() []string {
 	if t.size == 0 {
 		return []string{}
@@ -130,15 +131,15 @@ func (t *Trie) Keys() []string {
 	return t.PrefixSearch("")
 }
 
-// Performs a fuzzy search against the keys in the trie.
-func (t Trie) FuzzySearch(pre string) []string {
-	keys := fuzzycollect(t.Root(), []rune(pre))
+// FuzzySearch Performs a fuzzy search against the keys in the trie.
+func (t *Trie) FuzzySearch(pre string) []string {
+	keys := fuzzyCollect(t.Root(), []rune(pre))
 	sort.Sort(ByKeys(keys))
 	return keys
 }
 
-// Performs a prefix search against the keys in the trie.
-func (t Trie) PrefixSearch(pre string) []string {
+// PrefixSearch Performs a prefix search against the keys in the trie.
+func (t *Trie) PrefixSearch(pre string) []string {
 	node := findNode(t.Root(), []rune(pre))
 	if node == nil {
 		return nil
@@ -147,20 +148,20 @@ func (t Trie) PrefixSearch(pre string) []string {
 	return collect(node)
 }
 
-// Creates and returns a pointer to a new child for the node.
-func (parent *Node) NewChild(val rune, path string, bitmask uint64, meta interface{}, term bool) *Node {
+// NewChild Creates and returns a pointer to a new child for the node.
+func (n *Node) NewChild(val rune, path string, bitmask uint64, meta interface{}, term bool) *Node {
 	node := &Node{
 		val:      val,
 		path:     path,
 		mask:     bitmask,
 		term:     term,
 		meta:     meta,
-		parent:   parent,
+		parent:   n,
 		children: make(map[rune]*Node),
-		depth:    parent.depth + 1,
+		depth:    n.depth + 1,
 	}
-	parent.children[node.val] = node
-	parent.mask |= bitmask
+	n.children[node.val] = node
+	n.mask |= bitmask
 	return node
 }
 
@@ -175,36 +176,36 @@ func (n *Node) RemoveChild(r rune) {
 	}
 }
 
-// Returns the parent of this node.
-func (n Node) Parent() *Node {
+// Parent Returns the parent of this node.
+func (n *Node) Parent() *Node {
 	return n.parent
 }
 
-// Returns the meta information of this node.
-func (n Node) Meta() interface{} {
+// Meta Returns the meta information of this node.
+func (n *Node) Meta() interface{} {
 	return n.meta
 }
 
-// Returns the children of this node.
-func (n Node) Children() map[rune]*Node {
+// Children Returns the children of this node.
+func (n *Node) Children() map[rune]*Node {
 	return n.children
 }
 
-func (n Node) Terminating() bool {
+func (n *Node) Terminating() bool {
 	return n.term
 }
 
-func (n Node) Val() rune {
+func (n *Node) Val() rune {
 	return n.val
 }
 
-func (n Node) Depth() int {
+func (n *Node) Depth() int {
 	return n.depth
 }
 
-// Returns a uint64 representing the current
+// Mask Returns an uint64 representing the current
 // mask of this node.
-func (n Node) Mask() uint64 {
+func (n *Node) Mask() uint64 {
 	return n.mask
 }
 
@@ -222,17 +223,17 @@ func findNode(node *Node, runes []rune) *Node {
 		return nil
 	}
 
-	var nrunes []rune
+	var nRunes []rune
 	if len(runes) > 1 {
-		nrunes = runes[1:]
+		nRunes = runes[1:]
 	} else {
-		nrunes = runes[0:0]
+		nRunes = runes[0:0]
 	}
 
-	return findNode(n, nrunes)
+	return findNode(n, nRunes)
 }
 
-func maskruneslice(rs []rune) uint64 {
+func maskRuneSlice(rs []rune) uint64 {
 	var m uint64
 	for _, r := range rs {
 		m |= uint64(1) << uint64(r-'a')
@@ -268,7 +269,7 @@ type potentialSubtree struct {
 	node *Node
 }
 
-func fuzzycollect(node *Node, partial []rune) []string {
+func fuzzyCollect(node *Node, partial []rune) []string {
 	if len(partial) == 0 {
 		return collect(node)
 	}
@@ -280,12 +281,12 @@ func fuzzycollect(node *Node, partial []rune) []string {
 		keys []string
 	)
 
-	potential := []potentialSubtree{potentialSubtree{node: node, idx: 0}}
+	potential := []potentialSubtree{{node: node, idx: 0}}
 	for l := len(potential); l > 0; l = len(potential) {
 		i = l - 1
 		p = potential[i]
 		potential = potential[:i]
-		m = maskruneslice(partial[p.idx:])
+		m = maskRuneSlice(partial[p.idx:])
 		if (p.node.mask & m) != m {
 			continue
 		}
